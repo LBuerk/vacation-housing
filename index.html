@@ -22,20 +22,28 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     // Initialize the map
-    const map = L.map('map').setView([40.841991, 14.246773], 14); // Center the map around the given coordinates
+    const map = L.map('map').setView([40.844284, 14.254052], 14); // Center between the two points
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Add a circle around the given location
+    // Add the first circle (500m radius)
     L.circle([40.841991, 14.246773], {
         color: 'red',           // Border color
         fillColor: '#f03',      // Fill color
         fillOpacity: 0.5,       // Transparency
         radius: 500             // Radius in meters
     }).addTo(map).bindPopup("Area of interest: 500m radius");
+
+    // Add the second circle (750m radius)
+    L.circle([40.846578, 14.261331], {
+        color: 'blue',          // Border color
+        fillColor: '#03f',      // Fill color
+        fillOpacity: 0.5,       // Transparency
+        radius: 750             // Radius in meters
+    }).addTo(map).bindPopup("Area of interest: 750m radius");
 
     // Add markers for housing options
     const housingData = [
