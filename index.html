@@ -47,6 +47,41 @@
         .bindPopup(option.popup)
         .openPopup();
     });
+
+    // Add polygons to highlight regions
+    const regions = [
+      {
+        name: "Highly Considered Area 1",
+        coords: [
+          [40.8538, 14.2576],
+          [40.8560, 14.2635],
+          [40.8495, 14.2653],
+          [40.8472, 14.2595]
+        ],
+        color: "green" // Border color for this region
+      },
+      {
+        name: "Highly Considered Area 2",
+        coords: [
+          [40.8598, 14.2710],
+          [40.8615, 14.2755],
+          [40.8555, 14.2785],
+          [40.8530, 14.2730]
+        ],
+        color: "blue"
+      }
+    ];
+
+    // Add regions to the map
+    regions.forEach(region => {
+      L.polygon(region.coords, {
+        color: region.color, // Border color
+        fillColor: region.color, // Fill color
+        fillOpacity: 0.3 // Transparency
+      })
+        .addTo(map)
+        .bindPopup(region.name); // Popup for region
+    });
   </script>
 </body>
 </html>
