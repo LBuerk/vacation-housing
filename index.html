@@ -22,7 +22,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     // Initialize the map
-    const map = L.map('map').setView([40.844284, 14.254052], 14); // Center between the two points
+    const map = L.map('map').setView([40.844284, 14.254052], 14); // Center between the points
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -54,6 +54,10 @@
       {
         coords: [40.845, 14.250],
         popup: "Housing Option 2: $150/night<br><a href='#'>View Details</a>"
+      },
+      {
+        coords: [40.841108, 14.249870],
+        popup: "Housing Option 3: Via Figurelle a Montecalvario 39<br><a href='#'>View Details</a>"
       }
     ];
 
