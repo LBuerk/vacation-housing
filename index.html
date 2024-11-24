@@ -3,34 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vacation Housing Options</title>
+  <title>Interactive Map - Vacation Housing</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
-      line-height: 1.6;
       margin: 0;
-      padding: 20px;
-      background-color: #f4f4f4;
+      padding: 0;
     }
-    .container {
-      max-width: 800px;
-      margin: auto;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 20px auto;
-      border: 2px solid #ddd;
-      border-radius: 5px;
+    #map {
+      height: 100vh; /* Full-page map */
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Vacation Housing Options</h1>
-    <p>Here is a map of the areas we are considering:</p>
-    <img src="neapel-bild.png" alt="Map of Neapel with circles">
-  </div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    // Initialize the map
+    const map = L.map('map').setView([40.8522, 14.2681], 13); // Coordinates for Naples, Italy
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Add markers for housing options
+    const housingData = [
+      {
+        coords: [40.8518, 14.2686],
+        popup: "Housing Option 1: $120/night<br><a href='#'>View Details</a>"
+      },
+      {
+        coords: [40.8574, 14.2721],
+        popup: "Housing Option 2: $150/night<br><a href='#'>View Details</a>"
+      }
+    ];
+
+    // Loop through housing data and add markers
+    housingData.forEach(option => {
+      L.marker(option.coords).addTo(map)
+        .bindPopup(option.popup)
+        .openPopup();
+    });
+  </script>
 </body>
 </html>
