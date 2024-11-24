@@ -44,44 +44,33 @@
     // Loop through housing data and add markers
     housingData.forEach(option => {
       L.marker(option.coords).addTo(map)
-        .bindPopup(option.popup)
-        .openPopup();
+        .bindPopup(option.popup);
     });
 
-    // Add polygons to highlight regions
-    const regions = [
-      {
-        name: "Highly Considered Area 1",
-        coords: [
-          [40.8538, 14.2576],
-          [40.8560, 14.2635],
-          [40.8495, 14.2653],
-          [40.8472, 14.2595]
-        ],
-        color: "green" // Border color for this region
-      },
-      {
-        name: "Highly Considered Area 2",
-        coords: [
-          [40.8598, 14.2710],
-          [40.8615, 14.2755],
-          [40.8555, 14.2785],
-          [40.8530, 14.2730]
-        ],
-        color: "blue"
-      }
-    ];
+    // Add polygons for the regions
+    L.polygon([[40.8605, 14.2485], [40.8605, 14.2615], [40.8550, 14.2615], [40.8550, 14.2485]], {
+        color: 'green',
+        fillColor: 'green',
+        fillOpacity: 0.4
+    }).addTo(map).bindPopup("Green Region");
 
-    // Add regions to the map
-    regions.forEach(region => {
-      L.polygon(region.coords, {
-        color: region.color, // Border color
-        fillColor: region.color, // Fill color
-        fillOpacity: 0.3 // Transparency
-      })
-        .addTo(map)
-        .bindPopup(region.name); // Popup for region
-    });
+    L.polygon([[40.8555, 14.2710], [40.8555, 14.2780], [40.8500, 14.2780], [40.8500, 14.2710]], {
+        color: 'pink',
+        fillColor: 'pink',
+        fillOpacity: 0.4
+    }).addTo(map).bindPopup("Pink Region");
+
+    L.polygon([[40.8425, 14.2525], [40.8425, 14.2595], [40.8375, 14.2595], [40.8375, 14.2525]], {
+        color: 'red',
+        fillColor: 'red',
+        fillOpacity: 0.4
+    }).addTo(map).bindPopup("Red Region");
+
+    L.polygon([[40.8400, 14.2580], [40.8400, 14.2700], [40.8250, 14.2700], [40.8250, 14.2580]], {
+        color: 'blue',
+        fillColor: 'blue',
+        fillOpacity: 0.4
+    }).addTo(map).bindPopup("Blue Region");
   </script>
 </body>
 </html>
