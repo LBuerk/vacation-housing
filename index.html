@@ -22,21 +22,29 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     // Initialize the map
-    const map = L.map('map').setView([40.8522, 14.2681], 13); // Coordinates for Naples, Italy
+    const map = L.map('map').setView([40.841991, 14.246773], 14); // Center the map around the given coordinates
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
+    // Add a circle around the given location
+    L.circle([40.841991, 14.246773], {
+        color: 'red',           // Border color
+        fillColor: '#f03',      // Fill color
+        fillOpacity: 0.5,       // Transparency
+        radius: 500             // Radius in meters
+    }).addTo(map).bindPopup("Area of interest: 500m radius");
+
     // Add markers for housing options
     const housingData = [
       {
-        coords: [40.8518, 14.2686],
+        coords: [40.841991, 14.246773],
         popup: "Housing Option 1: $120/night<br><a href='#'>View Details</a>"
       },
       {
-        coords: [40.8574, 14.2721],
+        coords: [40.845, 14.250],
         popup: "Housing Option 2: $150/night<br><a href='#'>View Details</a>"
       }
     ];
@@ -46,31 +54,6 @@
       L.marker(option.coords).addTo(map)
         .bindPopup(option.popup);
     });
-
-    // Add polygons for the regions
-    L.polygon([[40.8605, 14.2485], [40.8605, 14.2615], [40.8550, 14.2615], [40.8550, 14.2485]], {
-        color: 'green',
-        fillColor: 'green',
-        fillOpacity: 0.4
-    }).addTo(map).bindPopup("Green Region");
-
-    L.polygon([[40.8555, 14.2710], [40.8555, 14.2780], [40.8500, 14.2780], [40.8500, 14.2710]], {
-        color: 'pink',
-        fillColor: 'pink',
-        fillOpacity: 0.4
-    }).addTo(map).bindPopup("Pink Region");
-
-    L.polygon([[40.8425, 14.2525], [40.8425, 14.2595], [40.8375, 14.2595], [40.8375, 14.2525]], {
-        color: 'red',
-        fillColor: 'red',
-        fillOpacity: 0.4
-    }).addTo(map).bindPopup("Red Region");
-
-    L.polygon([[40.8400, 14.2580], [40.8400, 14.2700], [40.8250, 14.2700], [40.8250, 14.2580]], {
-        color: 'blue',
-        fillColor: 'blue',
-        fillOpacity: 0.4
-    }).addTo(map).bindPopup("Blue Region");
   </script>
 </body>
 </html>
