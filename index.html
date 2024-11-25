@@ -36,6 +36,28 @@
       border: none;
       border-radius: 3px;
     }
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    #formPopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 1px solid black;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
@@ -107,7 +129,6 @@
     async function fetchPoints() {
       const querySnapshot = await getDocs(collection(db, "points"));
 
-      // Reset counters when re-fetching
       platformCounters.Booking = 0;
       platformCounters.Airbnb = 0;
       platformCounters.Other = 0;
@@ -141,14 +162,12 @@
         <td><button class="deleteBtn">Delete</button></td>
       `;
 
-      // Highlight marker on name click
       row.querySelector(".nameCell").addEventListener("click", () => {
         const marker = markers[name].marker;
         map.setView(marker.getLatLng(), 15);
         marker.openPopup();
       });
 
-      // Delete functionality
       row.querySelector(".deleteBtn").addEventListener("click", async () => {
         const pointId = markers[name].id;
         await deleteDoc(doc(db, "points", pointId));
@@ -184,7 +203,6 @@
       document.getElementById("formPopup").style.display = "none";
     });
 
-    // Toggle Table
     document.getElementById("toggleTable").addEventListener("click", () => {
       const tableWrapper = document.getElementById("tableWrapper");
       const toggleBtn = document.getElementById("toggleTable");
@@ -196,23 +214,6 @@
         toggleBtn.textContent = "⬇ Übersicht";
       }
     });
-
-    // Sorting
-    let sortDirection = true;
-    document.getElementById("sortName").addEventListener("click", () => sortTable(0));
-    document.getElementById("sortPrice").addEventListener("click", () => sortTable(1));
-
-    function sortTable(colIndex) {
-      const table = document.getElementById("pointTable");
-      const rows = Array.from(table.rows);
-      rows.sort((a, b) => {
-        const valA = a.cells[colIndex].textContent;
-        const valB = b.cells[colIndex].textContent;
-        return sortDirection ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      });
-      rows.forEach(row => table.appendChild(row));
-      sortDirection = !sortDirection;
-    }
 
     fetchPoints();
   </script>
