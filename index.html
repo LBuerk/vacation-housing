@@ -98,6 +98,22 @@
       cursor: pointer;
       width: 100%;
     }
+    /* Mobile-Specific Adjustments */
+    .mobile #map {
+      height: 60vh;
+    }
+    .mobile #pointTable {
+      height: 40vh;
+      width: 100%;
+      bottom: 0;
+      top: auto;
+      overflow-x: auto;
+      position: fixed;
+    }
+    .mobile th {
+      cursor: pointer;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -152,7 +168,6 @@
     const platformCounters = JSON.parse(localStorage.getItem('platformCounters')) || { Booking: 0, Airbnb: 0, Other: 0 };
     const markers = [];
 
-   <script>
     // Function to populate the table with all points
     function populateTable(sortBy = null, ascending = true) {
       const tableBody = document.getElementById('pointsTable').querySelector('tbody');
@@ -181,7 +196,7 @@
         `;
         tableBody.appendChild(row);
 
-        // Add hover or click effect for markers
+        // Center the map and open marker popup when clicking the name
         row.querySelector('.focus-marker').addEventListener('click', () => {
           map.setView([point.latitude, point.longitude], 16); // Center the map on the marker
           markers[index].openPopup(); // Open the marker popup
@@ -202,4 +217,52 @@
         });
       });
     }
-</script>
+
+    // Add sorting functionality
+    document.querySelectorAll('.sortable').forEach((header) => {
+      let ascending = true;
+      header.addEventListener('click', () => {
+        const sortBy = header.getAttribute('data-sort');
+        populateTable(sortBy, ascending);
+        ascending = !ascending;
+      });
+    });
+
+    storedPoints.forEach((point) => {
+      addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url, false);
+    });
+
+    function addPointToMap(platform, price, latitude, longitude, url, updateTable = true) {
+      const marker = L.marker([latitude, longitude]).addTo(map)
+        .bindPopup(`
+          <strong>${platform}</strong><br>
+          Price: ${price}€<br>
+          <a href="${url}" target="_blank">Visit Website</a>
+        `);
+
+      markers.push(marker);
+
+      if (updateTable) {
+        storedPoints.push({ platform, price, latitude, longitude, url });
+        localStorage.setItem('points', JSON.stringify(storedPoints));
+        populateTable();
+      }
+    }
+
+    // Event listener for "Option hinzufügen" button
+    document.getElementById('addPointButton').addEventListener('click', () => {
+      document.getElementById('popupOverlay').style.display = 'flex';
+    });
+
+    // Close popup when clicking outside
+    document.getElementById('popupOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('popupOverlay')) {
+        document.getElementById('popupOverlay').style.display = 'none';
+      }
+    });
+
+    populateTable();
+  </script>
+</body>
+</html>
+K
