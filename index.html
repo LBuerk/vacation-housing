@@ -203,6 +203,7 @@
       document.getElementById("formPopup").style.display = "none";
     });
 
+    // Toggle Table
     document.getElementById("toggleTable").addEventListener("click", () => {
       const tableWrapper = document.getElementById("tableWrapper");
       const toggleBtn = document.getElementById("toggleTable");
@@ -214,6 +215,23 @@
         toggleBtn.textContent = "⬇ Übersicht";
       }
     });
+
+    // Sorting
+    let sortDirection = true;
+    document.getElementById("sortName").addEventListener("click", () => sortTable(0));
+    document.getElementById("sortPrice").addEventListener("click", () => sortTable(1));
+
+    function sortTable(colIndex) {
+      const table = document.getElementById("pointTable");
+      const rows = Array.from(table.rows);
+      rows.sort((a, b) => {
+        const valA = a.cells[colIndex].textContent;
+        const valB = b.cells[colIndex].textContent;
+        return sortDirection ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      });
+      rows.forEach(row => table.appendChild(row));
+      sortDirection = !sortDirection;
+    }
 
     fetchPoints();
   </script>
