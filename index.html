@@ -3,18 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vacation Housing Map</title>
+  <title>Vacation Housing</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-    }
-
     #map {
       height: 80vh;
-      margin-bottom: 10px;
     }
-
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
     #formPopup {
       display: none;
       position: fixed;
@@ -27,42 +31,25 @@
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       z-index: 1000;
     }
-
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 10px;
+      margin-top: 10px;
     }
-
     th, td {
       border: 1px solid #ddd;
       padding: 8px;
       text-align: left;
     }
-
     th {
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Vacation Housing Options</h1>
-
+  <h1>Vacation Housing Map</h1>
   <div id="map"></div>
-
-  <button id="addPointBtn">Option hinzufügen</button>
-
+  <button id="addPointToggle">Option hinzufügen</button>
   <table>
     <thead>
       <tr>
@@ -102,7 +89,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCuUs51ljZlkV4U-pqAgTcnwyirgmvPEl8",
       authDomain: "vacation-housing.firebaseapp.com",
@@ -112,17 +98,14 @@
       appId: "1:984337993091:web:c8885a4aedca9e20ec7ab6"
     };
 
-    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Map setup
     const map = L.map('map').setView([40.841955, 14.247607], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
     }).addTo(map);
 
-    // Fetch and display points
     async function fetchPoints() {
       const querySnapshot = await getDocs(collection(db, "points"));
       querySnapshot.forEach((doc) => {
@@ -131,7 +114,6 @@
       });
     }
 
-    // Add a marker to the map
     function addPointToMap(name, platform, price, coordinates, url) {
       const marker = L.marker(coordinates).addTo(map);
       marker.bindPopup(`
@@ -143,7 +125,6 @@
       addPointToTable(name, platform, price, url);
     }
 
-    // Add a point to the table
     function addPointToTable(name, platform, price, url) {
       const table = document.getElementById("pointTable");
       const row = table.insertRow();
@@ -155,26 +136,23 @@
       `;
     }
 
-    // Show the popup form
-    document.getElementById("addPointBtn").addEventListener("click", () => {
+    document.getElementById("addPointToggle").addEventListener("click", () => {
       document.getElementById("overlay").style.display = "block";
       document.getElementById("formPopup").style.display = "block";
     });
 
-    // Close the popup when clicking outside
     document.getElementById("overlay").addEventListener("click", () => {
       document.getElementById("overlay").style.display = "none";
       document.getElementById("formPopup").style.display = "none";
     });
 
-    // Save a new point
     document.getElementById("savePointBtn").addEventListener("click", async () => {
       const platform = document.getElementById("platform").value;
       const price = parseInt(document.getElementById("price").value, 10);
       const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
       const url = document.getElementById("url").value;
 
-      const name = `${platform} ${new Date().getTime()}`; // Generate a unique name
+      const name = `${platform} ${new Date().getTime()}`;
       await addDoc(collection(db, "points"), { name, platform, price, coordinates, url });
       addPointToMap(name, platform, price, coordinates, url);
 
@@ -182,7 +160,6 @@
       document.getElementById("formPopup").style.display = "none";
     });
 
-    // Fetch points on page load
     fetchPoints();
   </script>
 </body>
