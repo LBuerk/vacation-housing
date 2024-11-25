@@ -64,58 +64,6 @@
       cursor: pointer;
       background-color: #f0f0f0;
     }
-    #toggleTable {
-      position: absolute;
-      top: 10px;
-      right: 300px;
-      z-index: 1100;
-      background: #007bff;
-      color: white;
-      padding: 5px;
-      border: none;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      text-align: center;
-      line-height: 20px;
-      cursor: pointer;
-      transform: translateY(-50%);
-    }
-    #popupOverlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      justify-content: center;
-      align-items: center;
-    }
-    #popupContent {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      width: 90%; /* Adjust for smaller screens */
-      max-width: 400px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    }
-    #popupContent select, #popupContent input, #popupContent button {
-      margin: 10px 0;
-      width: 100%;
-    }
-    #addPointButton {
-      margin-top: 10px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 10px;
-      cursor: pointer;
-      width: 100%;
-    }
-    /* Mobile-Specific Adjustments */
     .mobile #map {
       height: 60vh;
     }
@@ -127,11 +75,9 @@
       overflow-x: auto;
       position: fixed;
     }
-    .mobile #toggleTable {
-      display: none;
-    }
-    .mobile #retrieveButton {
-      display: none;
+    .mobile th {
+      cursor: pointer;
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -144,8 +90,8 @@
     <table id="pointsTable">
       <thead>
         <tr>
-          <th class="sortable">Name</th>
-          <th class="sortable">Price (€)</th>
+          <th class="sortable" data-sort="name">Name</th>
+          <th class="sortable" data-sort="price">Price (€)</th>
           <th>Link</th>
           <th>Actions</th>
         </tr>
@@ -203,11 +149,24 @@
     const markers = [];
 
     // Function to populate the table with all points
-    function populateTable() {
+    function populateTable(sortBy = null, ascending = true) {
       const tableBody = document.getElementById('pointsTable').querySelector('tbody');
       tableBody.innerHTML = ''; // Clear existing rows
+      let pointsToDisplay = [...storedPoints];
 
-      storedPoints.forEach((point, index) => {
+      if (sortBy) {
+        pointsToDisplay.sort((a, b) => {
+          if (sortBy === 'name') {
+            return ascending
+              ? a.platform.localeCompare(b.platform)
+              : b.platform.localeCompare(a.platform);
+          } else if (sortBy === 'price') {
+            return ascending ? a.price - b.price : b.price - a.price;
+          }
+        });
+      }
+
+      pointsToDisplay.forEach((point, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${point.platform}</td>
@@ -230,7 +189,7 @@
           markers[index].remove();
           storedPoints.splice(index, 1);
           localStorage.setItem('points', JSON.stringify(storedPoints));
-          populateTable(); // Refresh table after deletion
+          populateTable(sortBy, ascending); // Refresh table after deletion
         });
       });
     }
@@ -255,6 +214,16 @@
         populateTable();
       }
     }
+
+    // Add Sorting Event Listeners
+    document.querySelectorAll('.sortable').forEach((header) => {
+      let ascending = true; // Default sort direction
+      header.addEventListener('click', () => {
+        const sortBy = header.getAttribute('data-sort');
+        populateTable(sortBy, ascending);
+        ascending = !ascending; // Toggle sort direction
+      });
+    });
 
     // Event listener for "Option hinzufügen" button
     document.getElementById('addPointButton').addEventListener('click', () => {
@@ -289,24 +258,8 @@
       }
     });
 
-    // Toggle table visibility
-    document.getElementById('toggleTable').addEventListener('click', () => {
-      const pointTable = document.getElementById('pointTable');
-      const retrieveButton = document.getElementById('retrieveButton');
-      pointTable.classList.toggle('hidden');
-      retrieveButton.style.display = pointTable.classList.contains('hidden') ? 'block' : 'none';
-    });
-
-    // Retrieve table visibility
-    document.getElementById('retrieveButton').addEventListener('click', () => {
-      const pointTable = document.getElementById('pointTable');
-      const retrieveButton = document.getElementById('retrieveButton');
-      pointTable.classList.remove('hidden');
-      retrieveButton.style.display = 'none';
-    });
-
     populateTable();
-    adjustLayout();
+    adjustLayout(); // Adjust layout based on device type
   </script>
 </body>
 </html>
