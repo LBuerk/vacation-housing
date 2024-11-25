@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map with Mobile Optimizations</title>
+  <title>Responsive Interactive Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -51,8 +51,6 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      overflow-x: auto;
-      display: block; /* Enable horizontal scrolling */
     }
     th, td {
       padding: 10px;
@@ -117,39 +115,23 @@
       cursor: pointer;
       width: 100%;
     }
-    /* Mobile-First Responsiveness */
-    @media (max-width: 768px) {
-      #map {
-        height: 60vh; /* Reduce map size to accommodate table */
-      }
-      #pointTable {
-        width: 100%; /* Table takes up full width */
-        height: 40vh;
-        bottom: 0;
-        top: auto;
-        overflow-x: auto; /* Enable horizontal scrolling for smaller screens */
-      }
-      #toggleTable {
-        right: 10px; /* Adjust toggle button placement */
-      }
-      #retrieveButton {
-        top: auto;
-        bottom: 10px;
-        display: block; /* Always show retrieve button */
-      }
+    /* Mobile-Specific Adjustments */
+    .mobile #map {
+      height: 60vh;
     }
-    @media (max-width: 480px) {
-      #pointTable {
-        height: 50vh;
-        width: 100%;
-        padding: 5px;
-      }
-      th, td {
-        font-size: 14px; /* Reduce font size for smaller screens */
-      }
-      #popupContent {
-        width: 95%;
-      }
+    .mobile #pointTable {
+      height: 40vh;
+      width: 100%;
+      bottom: 0;
+      top: auto;
+      overflow-x: auto;
+      position: fixed;
+    }
+    .mobile #toggleTable {
+      display: none;
+    }
+    .mobile #retrieveButton {
+      display: none;
     }
   </style>
 </head>
@@ -193,6 +175,21 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
+    // Device Detection
+    function isMobileDevice() {
+      return /Mobi|Android/i.test(navigator.userAgent);
+    }
+
+    // Adjust Layout for Mobile/Desktop
+    function adjustLayout() {
+      const body = document.body;
+      if (isMobileDevice()) {
+        body.classList.add('mobile');
+      } else {
+        body.classList.remove('mobile');
+      }
+    }
+
     // Initialize the map
     const map = L.map('map').setView([40.844284, 14.254052], 14); // Default center
 
@@ -309,6 +306,7 @@
     });
 
     populateTable();
+    adjustLayout();
   </script>
 </body>
 </html>
