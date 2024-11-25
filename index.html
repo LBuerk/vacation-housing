@@ -12,7 +12,8 @@
     #tableWrapper {
       transition: max-height 0.5s ease-out;
       max-height: 300px;
-      overflow: hidden;
+      overflow-y: auto; /* Enable vertical scrolling */
+      overflow-x: hidden; /* Prevent horizontal scrolling */
     }
     table {
       width: 100%;
