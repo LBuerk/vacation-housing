@@ -64,20 +64,39 @@
       cursor: pointer;
       background-color: #f0f0f0;
     }
-    .mobile #map {
-      height: 60vh;
-    }
-    .mobile #pointTable {
-      height: 40vh;
-      width: 100%;
-      bottom: 0;
-      top: auto;
-      overflow-x: auto;
+    #popupOverlay {
+      display: none;
       position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
     }
-    .mobile th {
+    #popupContent {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%; /* Adjust for smaller screens */
+      max-width: 400px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    #popupContent select, #popupContent input, #popupContent button {
+      margin: 10px 0;
+      width: 100%;
+    }
+    #addPointButton {
+      margin-top: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
       cursor: pointer;
-      text-decoration: underline;
+      width: 100%;
     }
   </style>
 </head>
@@ -121,21 +140,6 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // Device Detection
-    function isMobileDevice() {
-      return /Mobi|Android/i.test(navigator.userAgent);
-    }
-
-    // Adjust Layout for Mobile/Desktop
-    function adjustLayout() {
-      const body = document.body;
-      if (isMobileDevice()) {
-        body.classList.add('mobile');
-      } else {
-        body.classList.remove('mobile');
-      }
-    }
-
     // Initialize the map
     const map = L.map('map').setView([40.844284, 14.254052], 14); // Default center
 
@@ -194,6 +198,16 @@
       });
     }
 
+    // Add event listener for sorting
+    document.querySelectorAll('.sortable').forEach((header) => {
+      let ascending = true;
+      header.addEventListener('click', () => {
+        const sortBy = header.getAttribute('data-sort');
+        populateTable(sortBy, ascending);
+        ascending = !ascending;
+      });
+    });
+
     storedPoints.forEach((point) => {
       addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url, false);
     });
@@ -215,19 +229,32 @@
       }
     }
 
-    // Add Sorting Event Listeners
-    document.querySelectorAll('.sortable').forEach((header) => {
-      let ascending = true; // Default sort direction
-      header.addEventListener('click', () => {
-        const sortBy = header.getAttribute('data-sort');
-        populateTable(sortBy, ascending);
-        ascending = !ascending; // Toggle sort direction
-      });
+    // Toggle table visibility
+    document.getElementById('toggleTable').addEventListener('click', () => {
+      const pointTable = document.getElementById('pointTable');
+      const retrieveButton = document.getElementById('retrieveButton');
+      pointTable.classList.toggle('hidden');
+      retrieveButton.style.display = pointTable.classList.contains('hidden') ? 'block' : 'none';
+    });
+
+    // Retrieve table visibility
+    document.getElementById('retrieveButton').addEventListener('click', () => {
+      const pointTable = document.getElementById('pointTable');
+      const retrieveButton = document.getElementById('retrieveButton');
+      pointTable.classList.remove('hidden');
+      retrieveButton.style.display = 'none';
     });
 
     // Event listener for "Option hinzufügen" button
     document.getElementById('addPointButton').addEventListener('click', () => {
       document.getElementById('popupOverlay').style.display = 'flex';
+    });
+
+    // Close popup when clicking outside
+    document.getElementById('popupOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('popupOverlay')) {
+        document.getElementById('popupOverlay').style.display = 'none';
+      }
     });
 
     // Event listener for adding a point
@@ -251,15 +278,7 @@
       }
     });
 
-    // Close popup when clicking outside
-    document.getElementById('popupOverlay').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('popupOverlay')) {
-        document.getElementById('popupOverlay').style.display = 'none';
-      }
-    });
-
     populateTable();
-    adjustLayout(); // Adjust layout based on device type
   </script>
 </body>
 </html>
