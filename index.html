@@ -3,14 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vacation Housing Map</title>
-  <!-- Leaflet CSS -->
+  <title>Vacation Housing</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
     }
     #map {
       height: 70vh;
@@ -18,44 +20,28 @@
     }
     .sidebar {
       width: 30%;
-      position: fixed;
-      top: 0;
-      right: 0;
-      height: 100%;
-      background: #f9f9f9;
+      max-width: 400px;
+      background-color: #f8f9fa;
+      padding: 10px;
       overflow-y: auto;
-      border-left: 1px solid #ddd;
-      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-      transition: transform 0.3s ease;
     }
-    .sidebar.hidden {
-      transform: translateX(100%);
-    }
-    .toggle-sidebar {
-      position: absolute;
-      top: 10px;
-      left: -40px;
-      background: #007bff;
-      color: white;
-      border: none;
-      cursor: pointer;
-      padding: 5px 10px;
-      border-radius: 5px;
+    .table-container {
+      width: 100%;
     }
     table {
       width: 100%;
       border-collapse: collapse;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ddd;
+      padding: 8px;
       text-align: left;
     }
     th {
-      background: #f0f0f0;
       cursor: pointer;
+      background-color: #f4f4f4;
     }
-    .popup {
+    #formPopup {
       display: none;
       position: fixed;
       top: 50%;
@@ -63,35 +49,62 @@
       transform: translate(-50%, -50%);
       background: white;
       padding: 20px;
-      border: 1px solid #ddd;
+      border: 1px solid black;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-    .popup.visible {
-      display: block;
-    }
-    .popup input, .popup select {
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
-      margin-bottom: 10px;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
     }
-    .popup button {
-      background: #007bff;
+    .controls {
+      margin: 10px 0;
+    }
+    .btn {
+      background-color: #007bff;
       color: white;
-      border: none;
       padding: 10px;
+      border: none;
       cursor: pointer;
-      border-radius: 5px;
+      margin: 5px;
+    }
+    .btn:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
+  <h1>Vacation Housing Map</h1>
   <div id="map"></div>
 
-  <div class="sidebar hidden" id="sidebar">
-    <button class="toggle-sidebar" onclick="toggleSidebar()">&lt;</button>
-    <h2>Point Overview</h2>
+  <div class="controls">
+    <button id="toggleTable" class="btn">Toggle Overview</button>
+    <button id="addPointBtn" class="btn">Add Point</button>
+  </div>
+
+  <div id="overlay"></div>
+  <div id="formPopup">
+    <h2>Add a New Point</h2>
+    <label for="platform">Platform:</label>
+    <select id="platform">
+      <option value="Booking">Booking</option>
+      <option value="Airbnb">Airbnb</option>
+    </select><br>
+    <label for="price">Price (€):</label>
+    <input type="number" id="price" placeholder="e.g., 1000" required><br>
+    <label for="coordinates">Coordinates:</label>
+    <input type="text" id="coordinates" placeholder="e.g., 40.841955, 14.247607" required><br>
+    <label for="url">Website URL:</label>
+    <input type="text" id="url" placeholder="e.g., https://example.com" required><br>
+    <button id="savePointBtn" class="btn">Save</button>
+  </div>
+
+  <div class="table-container" id="tableContainer" style="display:none;">
     <table>
       <thead>
         <tr>
@@ -103,28 +116,13 @@
       </thead>
       <tbody id="pointTable"></tbody>
     </table>
-    <button onclick="showPopup()">Add New Point</button>
   </div>
 
-  <div class="popup" id="popup">
-    <h2>Add a Point</h2>
-    <select id="platform">
-      <option value="Booking">Booking</option>
-      <option value="Airbnb">Airbnb</option>
-    </select>
-    <input type="number" id="price" placeholder="Price (€)" />
-    <input type="text" id="coordinates" placeholder="Coordinates (e.g., 40.841955, 14.247607)" />
-    <input type="text" id="url" placeholder="Website URL" />
-    <button onclick="addNewPoint()">Save</button>
-    <button onclick="hidePopup()">Cancel</button>
-  </div>
-
-  <!-- Firebase Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCuUs51ljZlkV4U-pqAgTcnwyirgmvPEl8",
       authDomain: "vacation-housing.firebaseapp.com",
@@ -138,76 +136,65 @@
     const db = getFirestore(app);
 
     const map = L.map('map').setView([40.841955, 14.247607], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19
-    }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
 
-    // Fetch points and display on map
+    const tableContainer = document.getElementById("tableContainer");
+    const pointTable = document.getElementById("pointTable");
+    const overlay = document.getElementById("overlay");
+    const formPopup = document.getElementById("formPopup");
+    const toggleTableBtn = document.getElementById("toggleTable");
+
+    toggleTableBtn.addEventListener("click", () => {
+      tableContainer.style.display = tableContainer.style.display === "none" ? "block" : "none";
+    });
+
+    document.getElementById("addPointBtn").addEventListener("click", () => {
+      overlay.style.display = "block";
+      formPopup.style.display = "block";
+    });
+
+    overlay.addEventListener("click", () => {
+      overlay.style.display = "none";
+      formPopup.style.display = "none";
+    });
+
+    document.getElementById("savePointBtn").addEventListener("click", async () => {
+      const platform = document.getElementById("platform").value;
+      const price = parseInt(document.getElementById("price").value);
+      const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
+      const url = document.getElementById("url").value;
+
+      const name = `${platform} ${new Date().getTime()}`;
+      await addDoc(collection(db, "points"), { name, platform, price, coordinates, url });
+
+      addPointToMap(name, platform, price, coordinates, url);
+
+      overlay.style.display = "none";
+      formPopup.style.display = "none";
+    });
+
     async function fetchPoints() {
       const snapshot = await getDocs(collection(db, "points"));
       snapshot.forEach((doc) => {
         const data = doc.data();
-        addPointToMap(data.name, data.platform, data.price, data.coordinates, data.url, doc.id);
+        addPointToMap(data.name, data.platform, data.price, data.coordinates, data.url);
       });
     }
 
-    // Add point to map and table
-    function addPointToMap(name, platform, price, coordinates, url, id) {
+    function addPointToMap(name, platform, price, coordinates, url) {
       const marker = L.marker(coordinates).addTo(map);
-      marker.bindPopup(`<strong>${name}</strong><br>Platform: ${platform}<br>Price: €${price}<br><a href="${url}" target="_blank">View</a>`);
-      addPointToTable(name, platform, price, id);
-    }
+      marker.bindPopup(`<strong>${name}</strong><br>Platform: ${platform}<br>Price: €${price}<br><a href="${url}" target="_blank">Link</a>`);
 
-    function addPointToTable(name, platform, price, id) {
-      const table = document.getElementById("pointTable");
-      const row = table.insertRow();
+      const row = pointTable.insertRow();
       row.innerHTML = `
         <td>${name}</td>
         <td>${price}</td>
         <td>${platform}</td>
-        <td>
-          <button onclick="deletePoint('${id}')">Delete</button>
-        </td>
+        <td><button class="btn" onclick="deletePoint('${name}')">Delete</button></td>
       `;
     }
 
-    async function addNewPoint() {
-      const platform = document.getElementById("platform").value;
-      const price = parseFloat(document.getElementById("price").value);
-      const coordinates = document.getElementById("coordinates").value.split(",").map(Number);
-      const url = document.getElementById("url").value;
-      const name = `${platform} ${Date.now()}`;
-
-      const docRef = await addDoc(collection(db, "points"), {
-        name, platform, price, coordinates, url
-      });
-
-      addPointToMap(name, platform, price, coordinates, url, docRef.id);
-      hidePopup();
-    }
-
-    async function deletePoint(id) {
-      await deleteDoc(doc(db, "points", id));
-      location.reload(); // Reload to refresh map and table
-    }
-
-    function showPopup() {
-      document.getElementById("popup").classList.add("visible");
-    }
-
-    function hidePopup() {
-      document.getElementById("popup").classList.remove("visible");
-    }
-
-    function toggleSidebar() {
-      document.getElementById("sidebar").classList.toggle("hidden");
-    }
-
-    // Fetch points on load
     fetchPoints();
   </script>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </body>
 </html>
