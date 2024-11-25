@@ -9,27 +9,10 @@
     #map {
       height: 80vh;
     }
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
-    }
-    #formPopup {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border: 1px solid black;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      z-index: 1000;
+    #tableWrapper {
+      transition: max-height 0.5s ease-out;
+      max-height: 300px;
+      overflow: hidden;
     }
     table {
       width: 100%;
@@ -44,23 +27,35 @@
     th {
       cursor: pointer;
     }
+    #toggleTable {
+      display: inline-block;
+      margin-top: 5px;
+      cursor: pointer;
+      background: lightgray;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
   <h1>Vacation Housing Map</h1>
   <div id="map"></div>
   <button id="addPointToggle">Option hinzufügen</button>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Price (€)</th>
-        <th>Platform</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="pointTable"></tbody>
-  </table>
+  <button id="toggleTable">⬆ Übersicht</button>
+  <div id="tableWrapper">
+    <table>
+      <thead>
+        <tr>
+          <th id="sortName">Name</th>
+          <th id="sortPrice">Price (€)</th>
+          <th>Site</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody id="pointTable"></tbody>
+    </table>
+  </div>
 
   <div id="overlay"></div>
   <div id="formPopup">
@@ -87,7 +82,7 @@
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuUs51ljZlkV4U-pqAgTcnwyirgmvPEl8",
@@ -102,11 +97,12 @@
     const db = getFirestore(app);
 
     const platformCounters = { Booking: 0, Airbnb: 0, Other: 0 };
-
     const map = L.map('map').setView([40.841955, 14.247607], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
     }).addTo(map);
+
+    const markers = {};
 
     async function fetchPoints() {
       const querySnapshot = await getDocs(collection(db, "points"));
@@ -118,31 +114,47 @@
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        platformCounters[data.platform]++; // Increment count for the platform
-        addPointToMap(data.name, data.platform, data.price, data.coordinates, data.url);
+        platformCounters[data.platform]++;
+        const marker = addPointToMap(data.name, data.price, data.coordinates, data.url);
+        markers[data.name] = { marker, id: doc.id };
       });
     }
 
-    function addPointToMap(name, platform, price, coordinates, url) {
+    function addPointToMap(name, price, coordinates, url) {
       const marker = L.marker(coordinates).addTo(map);
       marker.bindPopup(`
         <strong>${name}</strong><br>
-        Platform: ${platform}<br>
         Price: €${price}<br>
         <a href="${url}" target="_blank">View</a>
       `);
-      addPointToTable(name, platform, price, url);
+      addPointToTable(name, price, url);
+      return marker;
     }
 
-    function addPointToTable(name, platform, price, url) {
+    function addPointToTable(name, price, url) {
       const table = document.getElementById("pointTable");
       const row = table.insertRow();
       row.innerHTML = `
-        <td>${name}</td>
+        <td class="nameCell">${name}</td>
         <td>${price}</td>
-        <td>${platform}</td>
-        <td><a href="${url}" target="_blank">Link</a></td>
+        <td><a href="${url}" target="_blank">Site</a></td>
+        <td><button class="deleteBtn">Delete</button></td>
       `;
+
+      // Highlight marker on name click
+      row.querySelector(".nameCell").addEventListener("click", () => {
+        const marker = markers[name].marker;
+        map.setView(marker.getLatLng(), 15);
+        marker.openPopup();
+      });
+
+      // Delete functionality
+      row.querySelector(".deleteBtn").addEventListener("click", async () => {
+        const pointId = markers[name].id;
+        await deleteDoc(doc(db, "points", pointId));
+        marker.remove();
+        row.remove();
+      });
     }
 
     document.getElementById("addPointToggle").addEventListener("click", () => {
@@ -156,26 +168,51 @@
     });
 
     document.getElementById("savePointBtn").addEventListener("click", async () => {
-      try {
-        const platform = document.getElementById("platform").value;
-        const price = parseInt(document.getElementById("price").value, 10);
-        const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
-        const url = document.getElementById("url").value;
+      const platform = document.getElementById("platform").value;
+      const price = parseInt(document.getElementById("price").value, 10);
+      const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
+      const url = document.getElementById("url").value;
 
-        platformCounters[platform]++;
-        const name = `${platform} ${platformCounters[platform]}`;
+      platformCounters[platform]++;
+      const name = `${platform} ${platformCounters[platform]}`;
 
-        await addDoc(collection(db, "points"), { name, platform, price, coordinates, url });
+      const docRef = await addDoc(collection(db, "points"), { name, price, coordinates, url });
+      const marker = addPointToMap(name, price, coordinates, url);
+      markers[name] = { marker, id: docRef.id };
 
-        addPointToMap(name, platform, price, coordinates, url);
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("formPopup").style.display = "none";
+    });
 
-        document.getElementById("overlay").style.display = "none";
-        document.getElementById("formPopup").style.display = "none";
-      } catch (error) {
-        console.error("Error saving point:", error);
-        alert("Failed to save point. Check console for details.");
+    // Toggle Table
+    document.getElementById("toggleTable").addEventListener("click", () => {
+      const tableWrapper = document.getElementById("tableWrapper");
+      const toggleBtn = document.getElementById("toggleTable");
+      if (tableWrapper.style.maxHeight === "0px") {
+        tableWrapper.style.maxHeight = "300px";
+        toggleBtn.textContent = "⬆ Übersicht";
+      } else {
+        tableWrapper.style.maxHeight = "0px";
+        toggleBtn.textContent = "⬇ Übersicht";
       }
     });
+
+    // Sorting
+    let sortDirection = true;
+    document.getElementById("sortName").addEventListener("click", () => sortTable(0));
+    document.getElementById("sortPrice").addEventListener("click", () => sortTable(1));
+
+    function sortTable(colIndex) {
+      const table = document.getElementById("pointTable");
+      const rows = Array.from(table.rows);
+      rows.sort((a, b) => {
+        const valA = a.cells[colIndex].textContent;
+        const valB = b.cells[colIndex].textContent;
+        return sortDirection ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      });
+      rows.forEach(row => table.appendChild(row));
+      sortDirection = !sortDirection;
+    }
 
     fetchPoints();
   </script>
