@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map with Storage and Areas</title>
+  <title>Interactive Map with Single-Line Coordinates</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -52,8 +52,7 @@
     <h3>Add a New Point</h3>
     <input type="text" id="platform" placeholder="Platform (e.g., Booking)" />
     <input type="number" id="price" placeholder="Price (e.g., 1000)" />
-    <input type="text" id="latitude" placeholder="Latitude (e.g., 40.844284)" />
-    <input type="text" id="longitude" placeholder="Longitude (e.g., 14.254052)" />
+    <input type="text" id="coordinates" placeholder="Coordinates (e.g., 40.841955, 14.247607)" />
     <input type="url" id="url" placeholder="Website URL (e.g., https://example.com)" />
     <button id="addPoint">Add Point</button>
   </div>
@@ -105,24 +104,29 @@
     document.getElementById('addPoint').addEventListener('click', () => {
       const platform = document.getElementById('platform').value;
       const price = document.getElementById('price').value;
-      const latitude = parseFloat(document.getElementById('latitude').value);
-      const longitude = parseFloat(document.getElementById('longitude').value);
+      const coordinates = document.getElementById('coordinates').value;
       const url = document.getElementById('url').value;
 
-      if (platform && price && latitude && longitude && url) {
-        // Add the point to the map
-        addPointToMap(platform, price, latitude, longitude, url);
+      if (platform && price && coordinates && url) {
+        // Parse the coordinates
+        const [latitude, longitude] = coordinates.split(',').map(coord => parseFloat(coord.trim()));
 
-        // Save the point to localStorage
-        storedPoints.push({ platform, price, latitude, longitude, url });
-        localStorage.setItem('points', JSON.stringify(storedPoints));
+        if (!isNaN(latitude) && !isNaN(longitude)) {
+          // Add the point to the map
+          addPointToMap(platform, price, latitude, longitude, url);
 
-        // Clear the input fields after adding the point
-        document.getElementById('platform').value = '';
-        document.getElementById('price').value = '';
-        document.getElementById('latitude').value = '';
-        document.getElementById('longitude').value = '';
-        document.getElementById('url').value = '';
+          // Save the point to localStorage
+          storedPoints.push({ platform, price, latitude, longitude, url });
+          localStorage.setItem('points', JSON.stringify(storedPoints));
+
+          // Clear the input fields after adding the point
+          document.getElementById('platform').value = '';
+          document.getElementById('price').value = '';
+          document.getElementById('coordinates').value = '';
+          document.getElementById('url').value = '';
+        } else {
+          alert('Invalid coordinates format. Please use "latitude, longitude".');
+        }
       } else {
         alert('Please fill out all fields!');
       }
