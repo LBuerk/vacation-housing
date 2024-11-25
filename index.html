@@ -102,8 +102,9 @@
     <table id="pointsTable">
       <thead>
         <tr>
-          <th>Name</th>
+          <th class="sortable">Name</th>
           <th class="sortable">Price (€)</th>
+          <th>Link</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -129,13 +130,19 @@
     const markers = [];
 
     // Function to populate the table with all points
-    function populateTable(sortByPrice = false, ascending = true) {
+    function populateTable(sortBy = null, ascending = true) {
       const tableBody = document.getElementById('pointsTable').querySelector('tbody');
       tableBody.innerHTML = ''; // Clear existing rows
       let pointsToDisplay = [...storedPoints];
 
-      if (sortByPrice) {
+      if (sortBy === 'price') {
         pointsToDisplay.sort((a, b) => (ascending ? a.price - b.price : b.price - a.price));
+      } else if (sortBy === 'name') {
+        pointsToDisplay.sort((a, b) => {
+          return ascending
+            ? a.platform.localeCompare(b.platform)
+            : b.platform.localeCompare(a.platform);
+        });
       }
 
       pointsToDisplay.forEach((point, index) => {
@@ -143,6 +150,7 @@
         row.innerHTML = `
           <td>${point.platform}</td>
           <td contenteditable="true" data-index="${index}" class="editable">${point.price}</td>
+          <td><a href="${point.url}" target="_blank">Link</a></td>
           <td><button class="delete-btn" data-index="${index}">Delete</button></td>
         `;
         tableBody.appendChild(row);
@@ -169,7 +177,7 @@
           markers[index].remove();
           storedPoints.splice(index, 1);
           localStorage.setItem('points', JSON.stringify(storedPoints));
-          populateTable(sortByPrice, ascending); // Refresh table after deletion
+          populateTable(sortBy, ascending); // Refresh table after deletion
         });
       });
     }
@@ -227,10 +235,14 @@
       document.getElementById('pointTable').classList.toggle('visible');
     });
 
-    // Sort table by price
-    document.querySelector('.sortable').addEventListener('click', () => {
-      const ascending = !document.querySelector('.sortable').classList.toggle('desc');
-      populateTable(true, ascending);
+    // Sort table by columns
+    document.querySelectorAll('.sortable').forEach((header, index) => {
+      let ascending = true;
+      header.addEventListener('click', () => {
+        const sortBy = index === 0 ? 'name' : 'price';
+        populateTable(sortBy, ascending);
+        ascending = !ascending;
+      });
     });
   </script>
 </body>
