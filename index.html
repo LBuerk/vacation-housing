@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map with Single-Line Coordinates</title>
+  <title>Interactive Map with Platform Enum and Counter</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -28,7 +28,7 @@
     #inputForm.hidden {
       transform: translateX(-110%);
     }
-    #inputForm input, #inputForm button {
+    #inputForm select, #inputForm input, #inputForm button {
       margin: 5px 0;
       width: 100%;
     }
@@ -50,7 +50,11 @@
   <button id="toggleButton">Toggle Input</button>
   <div id="inputForm">
     <h3>Add a New Point</h3>
-    <input type="text" id="platform" placeholder="Platform (e.g., Booking)" />
+    <select id="platform">
+      <option value="Booking">Booking</option>
+      <option value="Airbnb">Airbnb</option>
+      <option value="Other">Other</option>
+    </select>
     <input type="number" id="price" placeholder="Price (e.g., 1000)" />
     <input type="text" id="coordinates" placeholder="Coordinates (e.g., 40.841955, 14.247607)" />
     <input type="url" id="url" placeholder="Website URL (e.g., https://example.com)" />
@@ -85,6 +89,8 @@
 
     // Load stored points from localStorage
     const storedPoints = JSON.parse(localStorage.getItem('points')) || [];
+    const platformCounters = JSON.parse(localStorage.getItem('platformCounters')) || { Booking: 0, Airbnb: 0, Other: 0 };
+
     storedPoints.forEach(point => addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url));
 
     // Function to add a new marker to the map
@@ -112,15 +118,20 @@
         const [latitude, longitude] = coordinates.split(',').map(coord => parseFloat(coord.trim()));
 
         if (!isNaN(latitude) && !isNaN(longitude)) {
-          // Add the point to the map
-          addPointToMap(platform, price, latitude, longitude, url);
+          // Increment the counter for the platform
+          platformCounters[platform] = (platformCounters[platform] || 0) + 1;
+
+          // Add the point to the map with a unique label
+          const uniquePlatform = `${platform} ${platformCounters[platform]}`;
+          addPointToMap(uniquePlatform, price, latitude, longitude, url);
 
           // Save the point to localStorage
-          storedPoints.push({ platform, price, latitude, longitude, url });
+          storedPoints.push({ platform: uniquePlatform, price, latitude, longitude, url });
           localStorage.setItem('points', JSON.stringify(storedPoints));
+          localStorage.setItem('platformCounters', JSON.stringify(platformCounters));
 
           // Clear the input fields after adding the point
-          document.getElementById('platform').value = '';
+          document.getElementById('platform').value = 'Booking';
           document.getElementById('price').value = '';
           document.getElementById('coordinates').value = '';
           document.getElementById('url').value = '';
