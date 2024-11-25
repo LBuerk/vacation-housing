@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map with Editable Table</title>
+  <title>Interactive Map with Mobile Optimizations</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -51,6 +51,8 @@
     table {
       width: 100%;
       border-collapse: collapse;
+      overflow-x: auto;
+      display: block; /* Enable horizontal scrolling */
     }
     th, td {
       padding: 10px;
@@ -97,7 +99,8 @@
       background: white;
       padding: 20px;
       border-radius: 10px;
-      width: 300px;
+      width: 90%; /* Adjust for smaller screens */
+      max-width: 400px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     }
     #popupContent select, #popupContent input, #popupContent button {
@@ -113,6 +116,40 @@
       padding: 10px;
       cursor: pointer;
       width: 100%;
+    }
+    /* Mobile-First Responsiveness */
+    @media (max-width: 768px) {
+      #map {
+        height: 60vh; /* Reduce map size to accommodate table */
+      }
+      #pointTable {
+        width: 100%; /* Table takes up full width */
+        height: 40vh;
+        bottom: 0;
+        top: auto;
+        overflow-x: auto; /* Enable horizontal scrolling for smaller screens */
+      }
+      #toggleTable {
+        right: 10px; /* Adjust toggle button placement */
+      }
+      #retrieveButton {
+        top: auto;
+        bottom: 10px;
+        display: block; /* Always show retrieve button */
+      }
+    }
+    @media (max-width: 480px) {
+      #pointTable {
+        height: 50vh;
+        width: 100%;
+        padding: 5px;
+      }
+      th, td {
+        font-size: 14px; /* Reduce font size for smaller screens */
+      }
+      #popupContent {
+        width: 95%;
+      }
     }
   </style>
 </head>
