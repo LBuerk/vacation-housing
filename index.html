@@ -152,6 +152,7 @@
     const platformCounters = JSON.parse(localStorage.getItem('platformCounters')) || { Booking: 0, Airbnb: 0, Other: 0 };
     const markers = [];
 
+   <script>
     // Function to populate the table with all points
     function populateTable(sortBy = null, ascending = true) {
       const tableBody = document.getElementById('pointsTable').querySelector('tbody');
@@ -173,19 +174,23 @@
       pointsToDisplay.forEach((point, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td>${point.platform}</td>
+          <td class="focus-marker" data-index="${index}">${point.platform}</td>
           <td>${point.price}</td>
-          <td><a href="${point.url}" target="_blank">Link</a></td>
+          <td><a href="${point.url}" target="_blank" class="open-link">Link</a></td>
           <td><button class="delete-btn" data-index="${index}">Delete</button></td>
         `;
         tableBody.appendChild(row);
 
-        // Add hover effect
-        row.addEventListener('mouseenter', () => {
-          markers[index].openPopup();
+        // Add hover or click effect for markers
+        row.querySelector('.focus-marker').addEventListener('click', () => {
+          map.setView([point.latitude, point.longitude], 16); // Center the map on the marker
+          markers[index].openPopup(); // Open the marker popup
         });
-        row.addEventListener('mouseleave', () => {
-          markers[index].closePopup();
+
+        // Open link immediately on the first click
+        row.querySelector('.open-link').addEventListener('click', (e) => {
+          e.preventDefault(); // Prevent default action to ensure the link opens properly
+          window.open(point.url, '_blank'); // Open the link in a new tab
         });
 
         // Delete button handling
@@ -197,88 +202,4 @@
         });
       });
     }
-
-    // Add event listener for sorting
-    document.querySelectorAll('.sortable').forEach((header) => {
-      let ascending = true;
-      header.addEventListener('click', () => {
-        const sortBy = header.getAttribute('data-sort');
-        populateTable(sortBy, ascending);
-        ascending = !ascending;
-      });
-    });
-
-    storedPoints.forEach((point) => {
-      addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url, false);
-    });
-
-    function addPointToMap(platform, price, latitude, longitude, url, updateTable = true) {
-      const marker = L.marker([latitude, longitude]).addTo(map)
-        .bindPopup(`
-          <strong>${platform}</strong><br>
-          Price: ${price}€<br>
-          <a href="${url}" target="_blank">Visit Website</a>
-        `);
-
-      markers.push(marker);
-
-      if (updateTable) {
-        storedPoints.push({ platform, price, latitude, longitude, url });
-        localStorage.setItem('points', JSON.stringify(storedPoints));
-        populateTable();
-      }
-    }
-
-    // Toggle table visibility
-    document.getElementById('toggleTable').addEventListener('click', () => {
-      const pointTable = document.getElementById('pointTable');
-      const retrieveButton = document.getElementById('retrieveButton');
-      pointTable.classList.toggle('hidden');
-      retrieveButton.style.display = pointTable.classList.contains('hidden') ? 'block' : 'none';
-    });
-
-    // Retrieve table visibility
-    document.getElementById('retrieveButton').addEventListener('click', () => {
-      const pointTable = document.getElementById('pointTable');
-      const retrieveButton = document.getElementById('retrieveButton');
-      pointTable.classList.remove('hidden');
-      retrieveButton.style.display = 'none';
-    });
-
-    // Event listener for "Option hinzufügen" button
-    document.getElementById('addPointButton').addEventListener('click', () => {
-      document.getElementById('popupOverlay').style.display = 'flex';
-    });
-
-    // Close popup when clicking outside
-    document.getElementById('popupOverlay').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('popupOverlay')) {
-        document.getElementById('popupOverlay').style.display = 'none';
-      }
-    });
-
-    // Event listener for adding a point
-    document.getElementById('addPoint').addEventListener('click', () => {
-      const platform = document.getElementById('platform').value;
-      const price = parseInt(document.getElementById('price').value, 10);
-      const coordinates = document.getElementById('coordinates').value;
-      const url = document.getElementById('url').value;
-
-      if (platform && !isNaN(price) && coordinates && url) {
-        const [latitude, longitude] = coordinates.split(',').map(coord => parseFloat(coord.trim()));
-        platformCounters[platform] = (platformCounters[platform] || 0) + 1;
-        const uniquePlatform = `${platform} ${platformCounters[platform]}`;
-        addPointToMap(uniquePlatform, price, latitude, longitude, url);
-        localStorage.setItem('platformCounters', JSON.stringify(platformCounters));
-
-        document.getElementById('popupOverlay').style.display = 'none';
-        populateTable();
-      } else {
-        alert('Please fill out all fields!');
-      }
-    });
-
-    populateTable();
-  </script>
-</body>
-</html>
+</script>
