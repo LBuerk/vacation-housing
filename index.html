@@ -50,10 +50,26 @@
 
     // Addresses, prices, and labels to geocode
     const points = [
-      { address: "Vico Figurella a Montecalvario, 39, 80134 Napoli NA, Italien", price: "1072€", label: "Booking" },
-      { address: "Via Portacarrese a Montecalvario, 25, 80134 Napoli NA, Italien", price: "1123€", label: "Booking" },
-      { address: "Via Pignasecca, 15, 80134 Napoli NA, Italien", price: "1023€", label: "Booking" },
-      { address: "L'Adelaide Fleur, Vico Due Porte a Toledo, 4, 80134 Napoli NA, Italien", price: "1541€", label: "Airbnb" }
+      {
+        address: "Vico Figurella a Montecalvario, 39, 80134 Napoli NA, Italien",
+        price: "1072€",
+        label: "Booking"
+      },
+      {
+        address: "Via Portacarrese a Montecalvario, 25, 80134 Napoli NA, Italien",
+        price: "1123€",
+        label: "Booking"
+      },
+      {
+        address: "Via Pignasecca, 15, 80134 Napoli NA, Italien",
+        price: "1023€",
+        label: "Booking"
+      },
+      {
+        address: "L'Adelaide Fleur, Vico Due Porte a Toledo, 4, 80134 Napoli NA, Italien",
+        price: "1541€",
+        label: "Airbnb"
+      }
     ];
 
     // Function to geocode an address and add a marker to the map
@@ -66,7 +82,11 @@
 
             // Add marker to the map
             L.marker([lat, lng]).addTo(map)
-              .bindPopup(`<strong>${point.label}</strong><br>Price: ${point.price}`)
+              .bindPopup(`
+                <strong>${point.label}</strong><br>
+                Address: ${point.address}<br>
+                Price: ${point.price}
+              `)
               .openPopup();
           } else {
             console.error(`Geocoding failed for address: ${point.address}`);
