@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map - Add Points</title>
+  <title>Interactive Map with Storage</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -23,14 +23,31 @@
       padding: 10px;
       border-radius: 5px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease;
+    }
+    #inputForm.hidden {
+      transform: translateX(-110%);
     }
     #inputForm input, #inputForm button {
       margin: 5px 0;
       width: 100%;
     }
+    #toggleButton {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      background: #007bff;
+      color: white;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+  <button id="toggleButton">Toggle Input</button>
   <div id="inputForm">
     <h3>Add a New Point</h3>
     <input type="text" id="platform" placeholder="Platform (e.g., Booking)" />
@@ -52,21 +69,9 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    // Add the first circle (500m radius)
-    L.circle([40.841991, 14.246773], {
-        color: 'red',           // Border color
-        fillColor: '#f03',      // Fill color
-        fillOpacity: 0.5,       // Transparency
-        radius: 500             // Radius in meters
-    }).addTo(map).bindPopup("Area of interest: 500m radius");
-
-    // Add the second circle (750m radius)
-    L.circle([40.846578, 14.261331], {
-        color: 'blue',          // Border color
-        fillColor: '#03f',      // Fill color
-        fillOpacity: 0.5,       // Transparency
-        radius: 750             // Radius in meters
-    }).addTo(map).bindPopup("Area of interest: 750m radius");
+    // Load stored points from localStorage
+    const storedPoints = JSON.parse(localStorage.getItem('points')) || [];
+    storedPoints.forEach(point => addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url));
 
     // Function to add a new marker to the map
     function addPointToMap(platform, price, latitude, longitude, url) {
@@ -75,10 +80,9 @@
           <strong>${platform}</strong><br>
           Price: ${price}€<br>
           <a href="${url}" target="_blank">Visit Website</a>
-        `)
-        .openPopup();
+        `);
 
-      // Center map on new marker
+      // Center map on the new marker
       map.setView([latitude, longitude], 14);
     }
 
@@ -91,7 +95,12 @@
       const url = document.getElementById('url').value;
 
       if (platform && price && latitude && longitude && url) {
+        // Add the point to the map
         addPointToMap(platform, price, latitude, longitude, url);
+
+        // Save the point to localStorage
+        storedPoints.push({ platform, price, latitude, longitude, url });
+        localStorage.setItem('points', JSON.stringify(storedPoints));
 
         // Clear the input fields after adding the point
         document.getElementById('platform').value = '';
@@ -102,6 +111,14 @@
       } else {
         alert('Please fill out all fields!');
       }
+    });
+
+    // Toggle the input form
+    const inputForm = document.getElementById('inputForm');
+    const toggleButton = document.getElementById('toggleButton');
+
+    toggleButton.addEventListener('click', () => {
+      inputForm.classList.toggle('hidden');
     });
   </script>
 </body>
