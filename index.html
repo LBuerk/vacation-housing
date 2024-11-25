@@ -31,6 +31,23 @@
     #pointTable.hidden {
       right: -350px;
     }
+    #retrieveButton {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1100;
+      background: #007bff;
+      color: white;
+      padding: 5px;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      line-height: 20px;
+      cursor: pointer;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -120,6 +137,7 @@
     </table>
     <button id="addPointButton">Option hinzufügen</button>
   </div>
+  <button id="retrieveButton">&gt;</button>
   <div id="popupOverlay">
     <div id="popupContent">
       <h3>Option hinzufügen</h3>
@@ -230,11 +248,27 @@
       }
     });
 
+    // Close popup when clicking outside
+    document.getElementById('popupOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('popupOverlay')) {
+        document.getElementById('popupOverlay').style.display = 'none';
+      }
+    });
+
     // Toggle table visibility
     document.getElementById('toggleTable').addEventListener('click', () => {
       const pointTable = document.getElementById('pointTable');
+      const retrieveButton = document.getElementById('retrieveButton');
       pointTable.classList.toggle('hidden');
-      document.getElementById('toggleTable').innerHTML = pointTable.classList.contains('hidden') ? '>' : '<';
+      retrieveButton.style.display = pointTable.classList.contains('hidden') ? 'block' : 'none';
+    });
+
+    // Retrieve table visibility
+    document.getElementById('retrieveButton').addEventListener('click', () => {
+      const pointTable = document.getElementById('pointTable');
+      const retrieveButton = document.getElementById('retrieveButton');
+      pointTable.classList.remove('hidden');
+      retrieveButton.style.display = 'none';
     });
 
     populateTable();
