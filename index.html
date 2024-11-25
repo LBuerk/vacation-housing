@@ -125,6 +125,7 @@
     }).addTo(map);
 
     const markers = {};
+    let sortDirection = true;
 
     async function fetchCounters() {
       const countersSnapshot = await getDoc(countersDocRef);
@@ -186,6 +187,21 @@
       });
     }
 
+    function sortTable(columnIndex) {
+      const table = document.getElementById("pointTable");
+      const rows = Array.from(table.rows);
+      rows.sort((a, b) => {
+        const valA = columnIndex === 1 ? parseInt(a.cells[columnIndex].textContent, 10) : a.cells[columnIndex].textContent;
+        const valB = columnIndex === 1 ? parseInt(b.cells[columnIndex].textContent, 10) : b.cells[columnIndex].textContent;
+        return sortDirection ? valA > valB ? 1 : -1 : valA < valB ? 1 : -1;
+      });
+      rows.forEach(row => table.appendChild(row));
+      sortDirection = !sortDirection;
+    }
+
+    document.getElementById("sortName").addEventListener("click", () => sortTable(0));
+    document.getElementById("sortPrice").addEventListener("click", () => sortTable(1));
+
     document.getElementById("addPointToggle").addEventListener("click", () => {
       document.getElementById("overlay").style.display = "block";
       document.getElementById("formPopup").style.display = "block";
@@ -204,27 +220,15 @@
 
       platformCounters[platform]++;
       const name = `${platform} ${platformCounters[platform]}`;
+      const pointData = { name, price, coordinates, url };
 
-      const docRef = await addDoc(collection(db, "points"), { name, price, coordinates, url });
-      await updateCounter(platform);
-
+      const docRef = await addDoc(collection(db, "points"), pointData);
       const marker = addPointToMap(name, price, coordinates, url);
       markers[name] = { marker, id: docRef.id };
+      updateCounter(platform);
 
       document.getElementById("overlay").style.display = "none";
       document.getElementById("formPopup").style.display = "none";
-    });
-
-    document.getElementById("toggleTable").addEventListener("click", () => {
-      const tableWrapper = document.getElementById("tableWrapper");
-      const toggleBtn = document.getElementById("toggleTable");
-      if (tableWrapper.style.maxHeight === "0px") {
-        tableWrapper.style.maxHeight = "300px";
-        toggleBtn.textContent = "⬆ Übersicht";
-      } else {
-        tableWrapper.style.maxHeight = "0px";
-        toggleBtn.textContent = "⬇ Übersicht";
-      }
     });
 
     fetchCounters();
