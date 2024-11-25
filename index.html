@@ -15,30 +15,6 @@
       height: 100vh;
       width: 100%;
     }
-    #inputForm {
-      display: none; /* Initially hidden */
-      background: white;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-      margin-top: 10px;
-    }
-    #inputForm select, #inputForm input, #inputForm button {
-      margin: 5px 0;
-      width: 100%;
-    }
-    #toggleButton {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 1100;
-      background: #007bff;
-      color: white;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
     #pointTable {
       position: absolute;
       top: 0;
@@ -49,10 +25,11 @@
       overflow-y: auto;
       padding: 10px;
       box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
+      transition: right 0.3s ease;
       z-index: 1000;
     }
-    #pointTable.visible {
-      right: 0;
+    #pointTable.hidden {
+      right: -350px;
     }
     table {
       width: 100%;
@@ -70,11 +47,64 @@
       cursor: pointer;
       background-color: #f0f0f0;
     }
+    #toggleTable {
+      position: absolute;
+      top: 10px;
+      right: 300px;
+      z-index: 1100;
+      background: #007bff;
+      color: white;
+      padding: 5px;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      text-align: center;
+      line-height: 20px;
+      cursor: pointer;
+      transform: translateY(-50%);
+    }
+    #popupOverlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+    }
+    #popupContent {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    #popupContent select, #popupContent input, #popupContent button {
+      margin: 10px 0;
+      width: 100%;
+    }
+    #addPointButton {
+      margin-top: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px;
+      cursor: pointer;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
-  <div id="pointTable" class="visible">
-    <h3>Übersicht</h3>
+  <div id="pointTable">
+    <h3>
+      Übersicht
+      <button id="toggleTable">&lt;</button>
+    </h3>
     <table id="pointsTable">
       <thead>
         <tr>
@@ -88,8 +118,10 @@
         <!-- Points will be dynamically added here -->
       </tbody>
     </table>
-    <button id="toggleButton">Option hinzufügen</button>
-    <div id="inputForm">
+    <button id="addPointButton">Option hinzufügen</button>
+  </div>
+  <div id="popupOverlay">
+    <div id="popupContent">
       <h3>Option hinzufügen</h3>
       <select id="platform">
         <option value="Booking">Booking</option>
@@ -119,26 +151,15 @@
     const markers = [];
 
     // Function to populate the table with all points
-    function populateTable(sortBy = null, ascending = true) {
+    function populateTable() {
       const tableBody = document.getElementById('pointsTable').querySelector('tbody');
       tableBody.innerHTML = ''; // Clear existing rows
-      let pointsToDisplay = [...storedPoints];
 
-      if (sortBy === 'price') {
-        pointsToDisplay.sort((a, b) => (ascending ? a.price - b.price : b.price - a.price));
-      } else if (sortBy === 'name') {
-        pointsToDisplay.sort((a, b) => {
-          return ascending
-            ? a.platform.localeCompare(b.platform)
-            : b.platform.localeCompare(a.platform);
-        });
-      }
-
-      pointsToDisplay.forEach((point, index) => {
+      storedPoints.forEach((point, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
           <td>${point.platform}</td>
-          <td contenteditable="true" data-index="${index}" class="editable">${point.price}</td>
+          <td>${point.price}</td>
           <td><a href="${point.url}" target="_blank">Link</a></td>
           <td><button class="delete-btn" data-index="${index}">Delete</button></td>
         `;
@@ -152,26 +173,17 @@
           markers[index].closePopup();
         });
 
-        // Editable price handling
-        row.querySelector('.editable').addEventListener('input', (e) => {
-          const newPrice = parseInt(e.target.innerText.trim(), 10);
-          if (!isNaN(newPrice)) {
-            storedPoints[index].price = newPrice;
-            localStorage.setItem('points', JSON.stringify(storedPoints));
-          }
-        });
-
         // Delete button handling
         row.querySelector('.delete-btn').addEventListener('click', () => {
           markers[index].remove();
           storedPoints.splice(index, 1);
           localStorage.setItem('points', JSON.stringify(storedPoints));
-          populateTable(sortBy, ascending); // Refresh table after deletion
+          populateTable(); // Refresh table after deletion
         });
       });
     }
 
-    storedPoints.forEach((point, index) => {
+    storedPoints.forEach((point) => {
       addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url, false);
     });
 
@@ -192,6 +204,12 @@
       }
     }
 
+    // Event listener for "Option hinzufügen" button
+    document.getElementById('addPointButton').addEventListener('click', () => {
+      document.getElementById('popupOverlay').style.display = 'flex';
+    });
+
+    // Event listener for adding a point
     document.getElementById('addPoint').addEventListener('click', () => {
       const platform = document.getElementById('platform').value;
       const price = parseInt(document.getElementById('price').value, 10);
@@ -205,31 +223,21 @@
         addPointToMap(uniquePlatform, price, latitude, longitude, url);
         localStorage.setItem('platformCounters', JSON.stringify(platformCounters));
 
-        document.getElementById('platform').value = 'Booking';
-        document.getElementById('price').value = '';
-        document.getElementById('coordinates').value = '';
-        document.getElementById('url').value = '';
+        document.getElementById('popupOverlay').style.display = 'none';
+        populateTable();
       } else {
         alert('Please fill out all fields!');
       }
     });
 
+    // Toggle table visibility
+    document.getElementById('toggleTable').addEventListener('click', () => {
+      const pointTable = document.getElementById('pointTable');
+      pointTable.classList.toggle('hidden');
+      document.getElementById('toggleTable').innerHTML = pointTable.classList.contains('hidden') ? '>' : '<';
+    });
+
     populateTable();
-
-    document.getElementById('toggleButton').addEventListener('click', () => {
-      const inputForm = document.getElementById('inputForm');
-      inputForm.style.display = inputForm.style.display === 'none' ? 'block' : 'none';
-    });
-
-    // Sort table by columns
-    document.querySelectorAll('.sortable').forEach((header, index) => {
-      let ascending = true;
-      header.addEventListener('click', () => {
-        const sortBy = index === 0 ? 'name' : 'price';
-        populateTable(sortBy, ascending);
-        ascending = !ascending;
-      });
-    });
   </script>
 </body>
 </html>
