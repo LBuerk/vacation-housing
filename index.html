@@ -173,17 +173,17 @@
         <td><button class="deleteBtn">Delete</button></td>
       `;
 
-    row.querySelector(".nameCell").addEventListener("click", () => {
-      const marker = markers[name].marker;
-      const latLng = marker.getLatLng();
-      map.setView([latLng.lat, latLng.lng], 15, {
-        animate: true,
-        pan: {
-          duration: 0.5
-        }
+      row.querySelector(".nameCell").addEventListener("click", () => {
+        const marker = markers[name].marker;
+        const latLng = marker.getLatLng();
+        map.setView([latLng.lat, latLng.lng], 15, {
+          animate: true,
+          pan: {
+            duration: 0.5
+          }
+        });
+        marker.openPopup();
       });
-      marker.openPopup();
-    });
 
       row.querySelector(".deleteBtn").addEventListener("click", async () => {
         const pointId = markers[name].id;
@@ -221,7 +221,7 @@
     document.getElementById("savePointBtn").addEventListener("click", async () => {
       const platform = document.getElementById("platform").value;
       const price = parseInt(document.getElementById("price").value, 10);
-      const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
+      const coordinates = document.getElementById("coordinates").value.split(',').map(coord => parseFloat(coord.trim()));
       const url = document.getElementById("url").value;
 
       platformCounters[platform]++;
@@ -239,6 +239,22 @@
 
     fetchCounters();
     fetchPoints();
+
+    // Toggle functionality for the table
+    let isTableVisible = true;
+    document.getElementById("toggleTable").addEventListener("click", () => {
+      const tableWrapper = document.getElementById("tableWrapper");
+      const toggleButton = document.getElementById("toggleTable");
+
+      if (isTableVisible) {
+        tableWrapper.style.maxHeight = "0";
+        toggleButton.textContent = "⬇ Übersicht";
+      } else {
+        tableWrapper.style.maxHeight = "300px";
+        toggleButton.textContent = "⬆ Übersicht";
+      }
+      isTableVisible = !isTableVisible;
+    });
   </script>
 </body>
 </html>
