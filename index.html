@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map - Vacation Housing</title>
+  <title>Interactive Map - Fixed Addresses</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -22,7 +22,7 @@
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     // Initialize the map
-    const map = L.map('map').setView([40.844284, 14.254052], 14); // Center between the points
+    const map = L.map('map').setView([40.844284, 14.254052], 14); // Default center
 
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -45,27 +45,36 @@
         radius: 750             // Radius in meters
     }).addTo(map).bindPopup("Area of interest: 750m radius");
 
-    // Add markers for housing options
-    const housingData = [
-      {
-        coords: [40.841991, 14.246773],
-        popup: "Housing Option 1: $120/night<br><a href='#'>View Details</a>"
-      },
-      {
-        coords: [40.845, 14.250],
-        popup: "Housing Option 2: $150/night<br><a href='#'>View Details</a>"
-      },
-      {
-        coords: [40.842044, 14.247763],
-        popup: "Housing Option 3: Updated Location<br><a href='#'>View Details</a>"
-      }
+    // OpenCage API key
+    const apiKey = "2bdd8f59eb244b21ad38d75b48ff316f";
+
+    // Addresses to geocode
+    const addresses = [
+      "Via Portacarrese a Montecalvario, 25, Plebiscito, 80134 Neapel, Italien",
+      "Via Figurelle a Montecalvario 39, Plebiscito, 80134 Neapel, Italien"
     ];
 
-    // Loop through housing data and add markers
-    housingData.forEach(option => {
-      L.marker(option.coords).addTo(map)
-        .bindPopup(option.popup);
-    });
+    // Function to geocode an address and add a marker to the map
+    function geocodeAddress(address) {
+      fetch(`https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${apiKey}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.results && data.results.length > 0) {
+            const { lat, lng } = data.results[0].geometry;
+
+            // Add marker to the map
+            L.marker([lat, lng]).addTo(map)
+              .bindPopup(`Address: ${address}<br>Coordinates: ${lat}, ${lng}`)
+              .openPopup();
+          } else {
+            console.error(`Geocoding failed for address: ${address}`);
+          }
+        })
+        .catch(error => console.error("Error during geocoding:", error));
+    }
+
+    // Loop through the addresses and geocode them
+    addresses.forEach(address => geocodeAddress(address));
   </script>
 </body>
 </html>
