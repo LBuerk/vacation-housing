@@ -101,6 +101,8 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const platformCounters = { Booking: 0, Airbnb: 0, Other: 0 };
+
     const map = L.map('map').setView([40.841955, 14.247607], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -108,8 +110,15 @@
 
     async function fetchPoints() {
       const querySnapshot = await getDocs(collection(db, "points"));
+
+      // Reset counters when re-fetching
+      platformCounters.Booking = 0;
+      platformCounters.Airbnb = 0;
+      platformCounters.Other = 0;
+
       querySnapshot.forEach((doc) => {
         const data = doc.data();
+        platformCounters[data.platform]++; // Increment count for the platform
         addPointToMap(data.name, data.platform, data.price, data.coordinates, data.url);
       });
     }
@@ -147,17 +156,25 @@
     });
 
     document.getElementById("savePointBtn").addEventListener("click", async () => {
-      const platform = document.getElementById("platform").value;
-      const price = parseInt(document.getElementById("price").value, 10);
-      const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
-      const url = document.getElementById("url").value;
+      try {
+        const platform = document.getElementById("platform").value;
+        const price = parseInt(document.getElementById("price").value, 10);
+        const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
+        const url = document.getElementById("url").value;
 
-      const name = `${platform} ${new Date().getTime()}`;
-      await addDoc(collection(db, "points"), { name, platform, price, coordinates, url });
-      addPointToMap(name, platform, price, coordinates, url);
+        platformCounters[platform]++;
+        const name = `${platform} ${platformCounters[platform]}`;
 
-      document.getElementById("overlay").style.display = "none";
-      document.getElementById("formPopup").style.display = "none";
+        await addDoc(collection(db, "points"), { name, platform, price, coordinates, url });
+
+        addPointToMap(name, platform, price, coordinates, url);
+
+        document.getElementById("overlay").style.display = "none";
+        document.getElementById("formPopup").style.display = "none";
+      } catch (error) {
+        console.error("Error saving point:", error);
+        alert("Failed to save point. Check console for details.");
+      }
     });
 
     fetchPoints();
