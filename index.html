@@ -185,12 +185,17 @@
         marker.openPopup();
       });
 
-      row.querySelector(".deleteBtn").addEventListener("click", async () => {
-        const pointId = markers[name].id;
-        await deleteDoc(doc(db, "points", pointId));
-        markers[name].marker.remove();
-        row.remove();
-      });
+    row.querySelector(".deleteBtn").addEventListener("click", async () => {
+      const pointId = markers[name].id; // Retrieve the point ID from Firebase
+      try {
+        await deleteDoc(doc(db, "points", pointId)); // Delete the document from Firebase
+        markers[name].marker.remove(); // Remove the marker from the map
+        row.remove(); // Remove the row from the table
+        delete markers[name]; // Remove the marker reference
+      } catch (error) {
+        console.error("Error deleting point from Firebase:", error);
+      }
+    });
     }
 
     function sortTable(columnIndex) {
