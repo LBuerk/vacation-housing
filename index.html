@@ -103,7 +103,7 @@
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCuUs51ljZlkV4U-pqAgTcnwyirgmvPEl8",
@@ -117,6 +117,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const countersDocRef = doc(db, "counters", "counterID");
     const platformCounters = { Booking: 0, Airbnb: 0, Other: 0 };
     const map = L.map('map').setView([40.841955, 14.247607], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -125,16 +126,26 @@
 
     const markers = {};
 
+    async function fetchCounters() {
+      const countersSnapshot = await getDoc(countersDocRef);
+      if (countersSnapshot.exists()) {
+        const data = countersSnapshot.data();
+        platformCounters.Booking = data.Booking || 0;
+        platformCounters.Airbnb = data.Airbnb || 0;
+        platformCounters.Other = data.Other || 0;
+      } else {
+        await setDoc(countersDocRef, { Booking: 0, Airbnb: 0, Other: 0 });
+      }
+    }
+
+    async function updateCounter(platform) {
+      await updateDoc(countersDocRef, { [platform]: platformCounters[platform] });
+    }
+
     async function fetchPoints() {
       const querySnapshot = await getDocs(collection(db, "points"));
-
-      platformCounters.Booking = 0;
-      platformCounters.Airbnb = 0;
-      platformCounters.Other = 0;
-
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        platformCounters[data.platform]++;
         const marker = addPointToMap(data.name, data.price, data.coordinates, data.url);
         markers[data.name] = { marker, id: doc.id };
       });
@@ -170,7 +181,7 @@
       row.querySelector(".deleteBtn").addEventListener("click", async () => {
         const pointId = markers[name].id;
         await deleteDoc(doc(db, "points", pointId));
-        marker.remove();
+        markers[name].marker.remove();
         row.remove();
       });
     }
@@ -195,6 +206,8 @@
       const name = `${platform} ${platformCounters[platform]}`;
 
       const docRef = await addDoc(collection(db, "points"), { name, price, coordinates, url });
+      await updateCounter(platform);
+
       const marker = addPointToMap(name, price, coordinates, url);
       markers[name] = { marker, id: docRef.id };
 
@@ -202,7 +215,6 @@
       document.getElementById("formPopup").style.display = "none";
     });
 
-    // Toggle Table
     document.getElementById("toggleTable").addEventListener("click", () => {
       const tableWrapper = document.getElementById("tableWrapper");
       const toggleBtn = document.getElementById("toggleTable");
@@ -215,23 +227,7 @@
       }
     });
 
-    // Sorting
-    let sortDirection = true;
-    document.getElementById("sortName").addEventListener("click", () => sortTable(0));
-    document.getElementById("sortPrice").addEventListener("click", () => sortTable(1));
-
-    function sortTable(colIndex) {
-      const table = document.getElementById("pointTable");
-      const rows = Array.from(table.rows);
-      rows.sort((a, b) => {
-        const valA = a.cells[colIndex].textContent;
-        const valB = b.cells[colIndex].textContent;
-        return sortDirection ? valA.localeCompare(valB) : valB.localeCompare(valA);
-      });
-      rows.forEach(row => table.appendChild(row));
-      sortDirection = !sortDirection;
-    }
-
+    fetchCounters();
     fetchPoints();
   </script>
 </body>
