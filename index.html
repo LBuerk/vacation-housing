@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map with Platform Enum and Counter</title>
+  <title>Interactive Map with Table</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -12,9 +12,9 @@
       padding: 0;
     }
     #map {
-      height: 100vh; /* Full-page map */
+      height: 70vh; /* Adjust map height to make space for the table */
     }
-    #inputForm {
+    #inputForm, #pointTable {
       position: absolute;
       top: 10px;
       left: 10px;
@@ -25,14 +25,14 @@
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
       transition: transform 0.3s ease;
     }
-    #inputForm.hidden {
+    #inputForm.hidden, #pointTable.hidden {
       transform: translateX(-110%);
     }
-    #inputForm select, #inputForm input, #inputForm button {
+    #inputForm select, #inputForm input, #inputForm button, #toggleTable {
       margin: 5px 0;
       width: 100%;
     }
-    #toggleButton {
+    #toggleButton, #toggleTable {
       position: absolute;
       top: 10px;
       left: 10px;
@@ -44,10 +44,30 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    #toggleTable {
+      top: 50px;
+    }
+    #tableContainer {
+      max-height: 30vh;
+      overflow-y: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    tr:hover {
+      background-color: #f5f5f5;
+    }
   </style>
 </head>
 <body>
   <button id="toggleButton">Toggle Input</button>
+  <button id="toggleTable">Toggle Table</button>
   <div id="inputForm">
     <h3>Add a New Point</h3>
     <select id="platform">
@@ -59,6 +79,22 @@
     <input type="text" id="coordinates" placeholder="Coordinates (e.g., 40.841955, 14.247607)" />
     <input type="url" id="url" placeholder="Website URL (e.g., https://example.com)" />
     <button id="addPoint">Add Point</button>
+  </div>
+  <div id="pointTable" class="hidden">
+    <h3>Existing Points</h3>
+    <div id="tableContainer">
+      <table id="pointsTable">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Price (€)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Points will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
   </div>
   <div id="map"></div>
 
@@ -74,36 +110,54 @@
 
     // Add predefined areas
     L.circle([40.841991, 14.246773], {
-        color: 'red',           // Border color
-        fillColor: '#f03',      // Fill color
-        fillOpacity: 0.5,       // Transparency
-        radius: 500             // Radius in meters
+        color: 'red',
+        fillColor: '#f03',
+        fillOpacity: 0.5,
+        radius: 500
     }).addTo(map).bindPopup("Area of interest: 500m radius");
 
     L.circle([40.846578, 14.261331], {
-        color: 'blue',          // Border color
-        fillColor: '#03f',      // Fill color
-        fillOpacity: 0.5,       // Transparency
-        radius: 750             // Radius in meters
+        color: 'blue',
+        fillColor: '#03f',
+        fillOpacity: 0.5,
+        radius: 750
     }).addTo(map).bindPopup("Area of interest: 750m radius");
 
     // Load stored points from localStorage
     const storedPoints = JSON.parse(localStorage.getItem('points')) || [];
     const platformCounters = JSON.parse(localStorage.getItem('platformCounters')) || { Booking: 0, Airbnb: 0, Other: 0 };
+    const markers = []; // Keep track of all markers for table hover effect
 
-    storedPoints.forEach(point => addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url));
+    storedPoints.forEach(point => addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url, false));
 
-    // Function to add a new marker to the map
-    function addPointToMap(platform, price, latitude, longitude, url) {
-      L.marker([latitude, longitude]).addTo(map)
+    // Function to add a new marker to the map and update the table
+    function addPointToMap(platform, price, latitude, longitude, url, updateTable = true) {
+      const marker = L.marker([latitude, longitude]).addTo(map)
         .bindPopup(`
           <strong>${platform}</strong><br>
           Price: ${price}€<br>
           <a href="${url}" target="_blank">Visit Website</a>
         `);
 
-      // Center map on the new marker
-      map.setView([latitude, longitude], 14);
+      markers.push(marker);
+
+      if (updateTable) {
+        const tableBody = document.getElementById('pointsTable').querySelector('tbody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${platform}</td>
+          <td>${price}</td>
+        `;
+        tableBody.appendChild(row);
+
+        // Add hover effect
+        row.addEventListener('mouseenter', () => {
+          marker.openPopup();
+        });
+        row.addEventListener('mouseleave', () => {
+          marker.closePopup();
+        });
+      }
     }
 
     // Event listener for the "Add Point" button
@@ -114,23 +168,17 @@
       const url = document.getElementById('url').value;
 
       if (platform && price && coordinates && url) {
-        // Parse the coordinates
         const [latitude, longitude] = coordinates.split(',').map(coord => parseFloat(coord.trim()));
 
         if (!isNaN(latitude) && !isNaN(longitude)) {
-          // Increment the counter for the platform
           platformCounters[platform] = (platformCounters[platform] || 0) + 1;
-
-          // Add the point to the map with a unique label
           const uniquePlatform = `${platform} ${platformCounters[platform]}`;
           addPointToMap(uniquePlatform, price, latitude, longitude, url);
 
-          // Save the point to localStorage
           storedPoints.push({ platform: uniquePlatform, price, latitude, longitude, url });
           localStorage.setItem('points', JSON.stringify(storedPoints));
           localStorage.setItem('platformCounters', JSON.stringify(platformCounters));
 
-          // Clear the input fields after adding the point
           document.getElementById('platform').value = 'Booking';
           document.getElementById('price').value = '';
           document.getElementById('coordinates').value = '';
@@ -144,11 +192,13 @@
     });
 
     // Toggle the input form
-    const inputForm = document.getElementById('inputForm');
-    const toggleButton = document.getElementById('toggleButton');
+    document.getElementById('toggleButton').addEventListener('click', () => {
+      document.getElementById('inputForm').classList.toggle('hidden');
+    });
 
-    toggleButton.addEventListener('click', () => {
-      inputForm.classList.toggle('hidden');
+    // Toggle the table
+    document.getElementById('toggleTable').addEventListener('click', () => {
+      document.getElementById('pointTable').classList.toggle('hidden');
     });
   </script>
 </body>
