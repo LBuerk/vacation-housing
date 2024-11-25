@@ -3,68 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Responsive Interactive Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <title>Vacation Housing Map</title>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
     #map {
-      height: 100vh;
-      width: 100%;
-    }
-    #pointTable {
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 300px;
-      height: 100vh;
-      background: white;
-      overflow-y: auto;
-      padding: 10px;
-      box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
-      transition: right 0.3s ease;
-      z-index: 1000;
-    }
-    #pointTable.hidden {
-      right: -350px;
-    }
-    #retrieveButton {
-      display: none;
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 1100;
-      background: #007bff;
-      color: white;
-      padding: 5px;
-      border: none;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      text-align: center;
-      line-height: 20px;
-      cursor: pointer;
+      height: 80vh;
+      margin-bottom: 10px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
+      margin-bottom: 10px;
     }
     th, td {
-      padding: 10px;
       border: 1px solid #ddd;
+      padding: 8px;
       text-align: left;
     }
-    tr:hover {
-      background-color: #f5f5f5;
-    }
-    th.sortable:hover {
+    th {
       cursor: pointer;
-      background-color: #f0f0f0;
     }
-    #popupOverlay {
+    #formPopup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border: 1px solid black;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #overlay {
       display: none;
       position: fixed;
       top: 0;
@@ -72,212 +43,138 @@
       width: 100%;
       height: 100%;
       background: rgba(0, 0, 0, 0.5);
-      z-index: 2000;
-      justify-content: center;
-      align-items: center;
-    }
-    #popupContent {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      width: 90%;
-      max-width: 400px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    }
-    #popupContent select, #popupContent input, #popupContent button {
-      margin: 10px 0;
-      width: 100%;
-    }
-    #addPointButton {
-      margin-top: 10px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      padding: 10px;
-      cursor: pointer;
-      width: 100%;
-    }
-    /* Mobile-Specific Adjustments */
-    .mobile #map {
-      height: 60vh;
-    }
-    .mobile #pointTable {
-      height: 40vh;
-      width: 100%;
-      bottom: 0;
-      top: auto;
-      overflow-x: auto;
-      position: fixed;
-    }
-    .mobile th {
-      cursor: pointer;
-      text-decoration: underline;
+      z-index: 999;
     }
   </style>
 </head>
 <body>
-  <div id="pointTable">
-    <h3>
-      Übersicht
-      <button id="toggleTable">&lt;</button>
-    </h3>
-    <table id="pointsTable">
-      <thead>
-        <tr>
-          <th class="sortable" data-sort="name">Name</th>
-          <th class="sortable" data-sort="price">Price (€)</th>
-          <th>Link</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <!-- Points will be dynamically added here -->
-      </tbody>
-    </table>
-    <button id="addPointButton">Option hinzufügen</button>
-  </div>
-  <button id="retrieveButton">&gt;</button>
-  <div id="popupOverlay">
-    <div id="popupContent">
-      <h3>Option hinzufügen</h3>
-      <select id="platform">
-        <option value="Booking">Booking</option>
-        <option value="Airbnb">Airbnb</option>
-        <option value="Other">Other</option>
-      </select>
-      <input type="number" id="price" placeholder="Price (e.g., 1000)" />
-      <input type="text" id="coordinates" placeholder="Coordinates (e.g., 40.841955, 14.247607)" />
-      <input type="url" id="url" placeholder="Website URL (e.g., https://example.com)" />
-      <button id="addPoint">Add Point</button>
-    </div>
-  </div>
+  <h1>Vacation Housing Options</h1>
   <div id="map"></div>
+  <table>
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)">Name</th>
+        <th onclick="sortTable(1)">Price (€)</th>
+        <th>Platform</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="pointTable"></tbody>
+  </table>
+  <button id="addPointBtn">Add Point</button>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script>
-    // Initialize the map
-    const map = L.map('map').setView([40.844284, 14.254052], 14); // Default center
+  <div id="overlay"></div>
+  <div id="formPopup">
+    <h2>Add a New Point</h2>
+    <label>Platform:</label>
+    <select id="platform">
+      <option value="Booking">Booking</option>
+      <option value="Airbnb">Airbnb</option>
+    </select>
+    <br>
+    <label>Price (€):</label>
+    <input type="number" id="price" placeholder="e.g., 1000" />
+    <br>
+    <label>Coordinates:</label>
+    <input type="text" id="coordinates" placeholder="e.g., 40.841955, 14.247607" />
+    <br>
+    <label>Website URL:</label>
+    <input type="text" id="url" placeholder="e.g., https://example.com" />
+    <br>
+    <button id="savePointBtn">Save</button>
+  </div>
 
-    // Add OpenStreetMap tiles
+  <!-- Firebase -->
+  <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCuUs51ljZlkV4U-pqAgTcnwyirgmvPEl8",
+      authDomain: "vacation-housing.firebaseapp.com",
+      projectId: "vacation-housing",
+      storageBucket: "vacation-housing.firebasestorage.app",
+      messagingSenderId: "984337993091",
+      appId: "1:984337993091:web:c8885a4aedca9e20ec7ab6"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Map setup
+    const map = L.map('map').setView([40.841955, 14.247607], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      maxZoom: 19,
     }).addTo(map);
 
-    const storedPoints = JSON.parse(localStorage.getItem('points')) || [];
-    const platformCounters = JSON.parse(localStorage.getItem('platformCounters')) || { Booking: 0, Airbnb: 0, Other: 0 };
-    const markers = [];
-
-    // Function to populate the table with all points
-    function populateTable(sortBy = null, ascending = true) {
-      const tableBody = document.getElementById('pointsTable').querySelector('tbody');
-      tableBody.innerHTML = ''; // Clear existing rows
-      let pointsToDisplay = [...storedPoints];
-
-      if (sortBy) {
-        pointsToDisplay.sort((a, b) => {
-          if (sortBy === 'name') {
-            return ascending
-              ? a.platform.localeCompare(b.platform)
-              : b.platform.localeCompare(a.platform);
-          } else if (sortBy === 'price') {
-            return ascending ? a.price - b.price : b.price - a.price;
-          }
-        });
-      }
-
-      pointsToDisplay.forEach((point, index) => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="focus-marker" data-index="${index}">${point.platform}</td>
-          <td>${point.price}</td>
-          <td><a href="${point.url}" target="_blank" class="open-link">Link</a></td>
-          <td><button class="delete-btn" data-index="${index}">Delete</button></td>
-        `;
-        tableBody.appendChild(row);
-
-        // Center the map and open marker popup when clicking the name
-        row.querySelector('.focus-marker').addEventListener('click', () => {
-          map.setView([point.latitude, point.longitude], 16); // Center the map on the marker
-          markers[index].openPopup(); // Open the marker popup
-        });
-
-        // Open link immediately on the first click
-        row.querySelector('.open-link').addEventListener('click', (e) => {
-          e.preventDefault(); // Prevent default action to ensure the link opens properly
-          window.open(point.url, '_blank'); // Open the link in a new tab
-        });
-
-        // Delete button handling
-        row.querySelector('.delete-btn').addEventListener('click', () => {
-          markers[index].remove();
-          storedPoints.splice(index, 1);
-          localStorage.setItem('points', JSON.stringify(storedPoints));
-          populateTable(sortBy, ascending); // Refresh table after deletion
-        });
+    // Add markers to the map
+    async function fetchPoints() {
+      const querySnapshot = await getDocs(collection(db, "points"));
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        addPointToMap(data.name, data.platform, data.price, data.coordinates, data.url);
       });
     }
 
-    // Add sorting functionality
-    document.querySelectorAll('.sortable').forEach((header) => {
-      let ascending = true;
-      header.addEventListener('click', () => {
-        const sortBy = header.getAttribute('data-sort');
-        populateTable(sortBy, ascending);
-        ascending = !ascending;
-      });
-    });
-
-    // Toggle "Übersicht" visibility
-    document.getElementById('toggleTable').addEventListener('click', () => {
-      const pointTable = document.getElementById('pointTable');
-      const retrieveButton = document.getElementById('retrieveButton');
-      pointTable.classList.toggle('hidden');
-      retrieveButton.style.display = pointTable.classList.contains('hidden') ? 'block' : 'none';
-    });
-
-    // Retrieve "Übersicht"
-    document.getElementById('retrieveButton').addEventListener('click', () => {
-      const pointTable = document.getElementById('pointTable');
-      const retrieveButton = document.getElementById('retrieveButton');
-      pointTable.classList.remove('hidden');
-      retrieveButton.style.display = 'none';
-    });
-
-    storedPoints.forEach((point) => {
-      addPointToMap(point.platform, point.price, point.latitude, point.longitude, point.url, false);
-    });
-
-    function addPointToMap(platform, price, latitude, longitude, url, updateTable = true) {
-      const marker = L.marker([latitude, longitude]).addTo(map)
-        .bindPopup(`
-          <strong>${platform}</strong><br>
-          Price: ${price}€<br>
-          <a href="${url}" target="_blank">Visit Website</a>
-        `);
-
-      markers.push(marker);
-
-      if (updateTable) {
-        storedPoints.push({ platform, price, latitude, longitude, url });
-        localStorage.setItem('points', JSON.stringify(storedPoints));
-        populateTable();
-      }
+    // Add point to the map
+    function addPointToMap(name, platform, price, coordinates, url) {
+      const marker = L.marker(coordinates).addTo(map);
+      marker.bindPopup(`
+        <strong>${name}</strong><br>
+        Platform: ${platform}<br>
+        Price: €${price}<br>
+        <a href="${url}" target="_blank">View</a>
+      `);
+      addPointToTable(name, platform, price, url);
     }
 
-    // Event listener for "Option hinzufügen" button
-    document.getElementById('addPointButton').addEventListener('click', () => {
-      document.getElementById('popupOverlay').style.display = 'flex';
+    // Add point to the table
+    function addPointToTable(name, platform, price, url) {
+      const table = document.getElementById("pointTable");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${name}</td>
+        <td>${price}</td>
+        <td>${platform}</td>
+        <td><a href="${url}" target="_blank">Link</a></td>
+      `;
+    }
+
+    // Open form popup
+    document.getElementById("addPointBtn").addEventListener("click", () => {
+      document.getElementById("overlay").style.display = "block";
+      document.getElementById("formPopup").style.display = "block";
     });
 
-    // Close popup when clicking outside
-    document.getElementById('popupOverlay').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('popupOverlay')) {
-        document.getElementById('popupOverlay').style.display = 'none';
-      }
+    // Close popup on overlay click
+    document.getElementById("overlay").addEventListener("click", () => {
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("formPopup").style.display = "none";
     });
 
-    populateTable();
+    // Save new point
+    document.getElementById("savePointBtn").addEventListener("click", async () => {
+      const platform = document.getElementById("platform").value;
+      const price = parseInt(document.getElementById("price").value, 10);
+      const coordinates = document.getElementById("coordinates").value.split(',').map(Number);
+      const url = document.getElementById("url").value;
+
+      const name = `${platform} ${new Date().getTime()}`;
+      await addDoc(collection(db, "points"), { name, platform, price, coordinates, url });
+      addPointToMap(name, platform, price, coordinates, url);
+
+      document.getElementById("overlay").style.display = "none";
+      document.getElementById("formPopup").style.display = "none";
+    });
+
+    // Fetch points on page load
+    fetchPoints();
   </script>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 </body>
 </html>
