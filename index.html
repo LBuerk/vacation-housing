@@ -173,11 +173,17 @@
         <td><button class="deleteBtn">Delete</button></td>
       `;
 
-      row.querySelector(".nameCell").addEventListener("click", () => {
-        const marker = markers[name].marker;
-        map.setView(marker.getLatLng(), 15);
-        marker.openPopup();
+    row.querySelector(".nameCell").addEventListener("click", () => {
+      const marker = markers[name].marker;
+      const latLng = marker.getLatLng();
+      map.setView([latLng.lat, latLng.lng], 15, {
+        animate: true,
+        pan: {
+          duration: 0.5
+        }
       });
+      marker.openPopup();
+    });
 
       row.querySelector(".deleteBtn").addEventListener("click", async () => {
         const pointId = markers[name].id;
