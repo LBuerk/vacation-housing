@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Map with Storage</title>
+  <title>Interactive Map with Storage and Areas</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
     body {
@@ -68,6 +68,21 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
+
+    // Add predefined areas
+    L.circle([40.841991, 14.246773], {
+        color: 'red',           // Border color
+        fillColor: '#f03',      // Fill color
+        fillOpacity: 0.5,       // Transparency
+        radius: 500             // Radius in meters
+    }).addTo(map).bindPopup("Area of interest: 500m radius");
+
+    L.circle([40.846578, 14.261331], {
+        color: 'blue',          // Border color
+        fillColor: '#03f',      // Fill color
+        fillOpacity: 0.5,       // Transparency
+        radius: 750             // Radius in meters
+    }).addTo(map).bindPopup("Area of interest: 750m radius");
 
     // Load stored points from localStorage
     const storedPoints = JSON.parse(localStorage.getItem('points')) || [];
